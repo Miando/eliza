@@ -6,6 +6,7 @@ import { FarcasterAgentClient } from "@ai16z/client-farcaster";
 import { LensAgentClient } from "@ai16z/client-lens";
 import { SlackClientInterface } from "@ai16z/client-slack";
 import { TelegramClientInterface } from "@ai16z/client-telegram";
+import { myProvider } from "./sample_provider";
 import { TwitterClientInterface } from "@ai16z/client-twitter";
 import {
     AgentRuntime,
@@ -368,6 +369,7 @@ export async function initializeClients(
 
         if (twitterClient) {
             clients.twitter = twitterClient;
+
             (twitterClient as any).enableSearch = !isFalsish(
                 getSecret(character, "TWITTER_SEARCH_ENABLE")
             );
@@ -599,6 +601,7 @@ async function startAgent(
             cache,
             token
         );
+        runtime.registerContextProvider(myProvider);
 
         // start services/plugins/process knowledge
         await runtime.initialize();

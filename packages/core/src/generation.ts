@@ -72,7 +72,7 @@ export async function generateText({
         modelProvider: runtime.modelProvider,
         model: modelClass,
     });
-
+    elizaLogger.info("Context:", context);
     const provider = runtime.modelProvider;
     const endpoint =
         runtime.character.modelEndpointOverride || models[provider].endpoint;
@@ -183,7 +183,15 @@ export async function generateText({
                     baseURL: endpoint,
                     fetch: runtime.fetch,
                 });
-
+                // elizaLogger.info("Request OpenAI:", {
+                //     model: model,
+                //     prompt: context,
+                //     system: runtime.character.system ?? settings.SYSTEM_PROMPT ?? undefined,
+                //     temperature: temperature,
+                //     maxTokens: max_response_length,
+                //     frequencyPenalty: frequency_penalty,
+                //     presencePenalty: presence_penalty,
+                // });
                 const { text: openaiResponse } = await aiGenerateText({
                     model: openai.languageModel(model),
                     prompt: context,
@@ -197,6 +205,9 @@ export async function generateText({
                     presencePenalty: presence_penalty,
                 });
 
+                // elizaLogger.info("Response OpenAI:", {
+                //     response: openaiResponse,
+                // });
                 response = openaiResponse;
                 elizaLogger.debug("Received response from OpenAI model.");
                 break;
@@ -562,7 +573,7 @@ export async function generateText({
                 throw new Error(errorMessage);
             }
         }
-
+        elizaLogger.info("Response:", response);
         return response;
     } catch (error) {
         elizaLogger.error("Error in generateText:", error);

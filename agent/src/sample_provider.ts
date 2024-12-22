@@ -1,8 +1,10 @@
 import {db} from "../db.ts";
 import {elizaLogger, IAgentRuntime, Memory, Provider, State} from "@ai16z/eliza";
 import {extract} from '@extractus/article-extractor';
+import {readFileSync, writeFileSync, existsSync} from "fs";
+import {resolve} from "path";
 
-
+const MANUAL_NEWS_PATH = resolve("manual_news.txt");
 const API_ENDPOINT = 'https://cryptonews-api.com/api/v1';
 const TICKERS = ['BEAM', 'FLOKI', 'SAND', 'GALA', 'IMX'];
 const TIMEFRAME_HOURS = 24;
@@ -100,19 +102,26 @@ export const myProvider: Provider = {
 ;
 
 
+
 async function getManualNews() {
     try {
-        const manualNews = readFileSync("manual_news.txt", "utf-8").trim();
+        if (!existsSync(MANUAL_NEWS_PATH)) {
+            elizaLogger.log(`File not found: ${MANUAL_NEWS_PATH}. Creating a new one.`);
+            writeFileSync(MANUAL_NEWS_PATH, "");
+        }
+
+        const manualNews = readFileSync(MANUAL_NEWS_PATH, "utf-8").trim();
         if (!manualNews) {
-            elizaLogger.log("manual_news.txt is empty. No news to provide.");
-            writeFileSync("manual_news.txt", ""); // Clear the file
+            elizaLogger.log(`manual_news.txt is empty. Clearing file: ${MANUAL_NEWS_PATH}`);
+            writeFileSync(MANUAL_NEWS_PATH, ""); // Clear the file
             return '\n\n#Today News:\nNo news found';
         }
 
-        elizaLogger.log("Providing news from manual_news.txt");
+        elizaLogger.log(`Providing news from manual_news.txt at path: ${MANUAL_NEWS_PATH}`);
+        writeFileSync(MANUAL_NEWS_PATH, ""); // Clear the file after reading
         return `\n\n#Today News:\n${manualNews}`;
     } catch (err) {
-        elizaLogger.error("Failed to read manual_news.txt:", err);
+        elizaLogger.error(`Failed to read manual_news.txt at path ${MANUAL_NEWS_PATH}:`, err);
         return '\n\n#Today News:\nNo news found';
     }
 }

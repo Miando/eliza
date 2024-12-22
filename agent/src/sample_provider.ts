@@ -13,7 +13,7 @@ export const myProvider: Provider = {
                 const API_KEY = process.env.CRYPTONEWS_API_KEY;
                 if (!API_KEY) {
                     elizaLogger.warn("No CRYPTONEWS_API_KEY configured. newsProvider returning empty.");
-                    return '\n\n#Today News:\nNo news found';;
+                    return '\n\n#Today News:\nNo news found';
                 }
 
                 const url = `${API_ENDPOINT}?section=general&items=10&tickers=${TICKERS.join(',')}&token=${API_KEY}`;
@@ -89,7 +89,7 @@ export const myProvider: Provider = {
 
                 // If we get here, all articles are processed or failed parse
                 elizaLogger.log("All retrieved articles have been processed or failed parsing. No new context to provide.");
-                return '\n\n#Today News:\nNo news found';
+                return await getManualNews();
 
             } catch (error) {
                 elizaLogger.error("Error in newsProvider:", error);
@@ -98,3 +98,21 @@ export const myProvider: Provider = {
         },
     }
 ;
+
+
+async function getManualNews() {
+    try {
+        const manualNews = readFileSync("manual_news.txt", "utf-8").trim();
+        if (!manualNews) {
+            elizaLogger.log("manual_news.txt is empty. No news to provide.");
+            writeFileSync("manual_news.txt", ""); // Clear the file
+            return '\n\n#Today News:\nNo news found';
+        }
+
+        elizaLogger.log("Providing news from manual_news.txt");
+        return `\n\n#Today News:\n${manualNews}`;
+    } catch (err) {
+        elizaLogger.error("Failed to read manual_news.txt:", err);
+        return '\n\n#Today News:\nNo news found';
+    }
+}

@@ -17,6 +17,11 @@ import {
 } from "agent-twitter-client";
 import { EventEmitter } from "events";
 
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url); // Создаем require
+const { HttpsProxyAgent } = require('https-proxy-agent'); // Импортируем HttpsProxyAgent
+
+
 export function extractAnswer(text: string): string {
     const startIndex = text.indexOf("Answer: ") + 8;
     const endIndex = text.indexOf("<|endoftext|>", 11);
@@ -137,11 +142,29 @@ export class ClientBase extends EventEmitter {
     constructor(runtime: IAgentRuntime) {
         super();
         this.runtime = runtime;
+
         const username = this.runtime.getSetting("TWITTER_USERNAME");
+        const proxyUrl = this.runtime.getSetting("PROXY_URL") || null; // Получаем прокси из настроек
+
+        let agent: any = undefined;
+
+        if (proxyUrl) {
+            agent = new HttpsProxyAgent(proxyUrl);
+        }
+
         if (ClientBase._twitterClients[username]) {
             this.twitterClient = ClientBase._twitterClients[username];
         } else {
-            this.twitterClient = new Scraper();
+            this.twitterClient = new Scraper({
+                transform: {
+                    request: (input, init) => {
+                        if (agent) {
+                            return [input, { ...init, dispatcher: agent }];
+                        }
+                        return [input, init];
+                    },
+                },
+            });
             ClientBase._twitterClients[username] = this.twitterClient;
         }
 

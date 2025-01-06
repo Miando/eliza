@@ -6,7 +6,7 @@ import {resolve} from "path";
 
 const MANUAL_NEWS_PATH = resolve("manual_news.txt");
 const API_ENDPOINT = 'https://cryptonews-api.com/api/v1';
-const TICKERS = ['BEAM', 'FLOKI', 'SAND', 'GALA', 'IMX'];
+const TICKERS = ['BEAM', 'FLOKI', 'SAND', 'GALA', 'IMX', 'AXS', 'MANA', 'ENJ', 'ILV', 'ALICE', 'YGG', 'UOS', 'WAXP'];
 const TIMEFRAME_HOURS = 24;
 
 export const myProvider: Provider = {
@@ -17,7 +17,6 @@ export const myProvider: Provider = {
                     elizaLogger.warn("No CRYPTONEWS_API_KEY configured. newsProvider returning empty.");
                     return '\n\n#Today News:\nNo news found';
                 }
-
                 const url = `${API_ENDPOINT}?section=general&items=10&tickers=${TICKERS.join(',')}&token=${API_KEY}`;
                 const response = await fetch(url);
                 const data = await response.json();

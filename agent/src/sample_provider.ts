@@ -30,8 +30,8 @@ export const myProvider: Provider = {
                 const checkStmt = db.prepare(`SELECT url, processed_at, parse_status
                                               FROM processed_news
                                               WHERE url = ? AND agent_id = ?`);
-                const insertStmt = db.prepare(`INSERT INTO processed_news (url, processed_at, parse_status, agent_id)
-                                               VALUES (?, ?, ?, ?)`);
+                const insertStmt = db.prepare(` INSERT OR REPLACE INTO processed_news (url, processed_at, parse_status, agent_id) VALUES (?, ?, ?, ?)`);
+
 
                 for (const article of data.data) {
                     const existing = checkStmt.get(article.news_url, runtime.agentId);

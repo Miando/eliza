@@ -29,15 +29,12 @@ export const myProvider: Provider = {
 
                 const checkStmt = db.prepare(`SELECT url, processed_at, parse_status
                                               FROM processed_news
-                                              WHERE url = ?`);
-                const insertStmt = db.prepare(`INSERT INTO processed_news (url, processed_at, parse_status)
-                                               VALUES (?, ?, ?)`);
-                const updateStmt = db.prepare(`UPDATE processed_news
-                                               SET parse_status = ?
-                                               WHERE url = ?`);
+                                              WHERE url = ? AND agent_id = ?`);
+                const insertStmt = db.prepare(`INSERT INTO processed_news (url, processed_at, parse_status, agent_id)
+                                               VALUES (?, ?, ?, ?)`);
 
                 for (const article of data.data) {
-                    const existing = checkStmt.get(article.news_url);
+                    const existing = checkStmt.get(article.news_url, runtime.agentId);
 
                     if (!existing) {
                         // Not processed in the last day (or ever)
@@ -55,7 +52,7 @@ export const myProvider: Provider = {
                         }
 
                         // Insert into processed_news table
-                        insertStmt.run(article.news_url, new Date().toISOString(), parseStatus);
+                        insertStmt.run(article.news_url, new Date().toISOString(), parseStatus, runtime.agentId);
 
                         // If parse failed, we still return something?
                         // The requirement says if it can't parse, just mark processed but no text
@@ -99,7 +96,6 @@ export const myProvider: Provider = {
         },
     }
 ;
-
 
 
 async function getManualNews() {

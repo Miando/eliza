@@ -19,6 +19,13 @@ CREATE TABLE IF NOT EXISTS processed_news (
 );
 `);
 
+// Ensure 'agent_id' column exists in processed_news table
+const processedNewsColumns = db.prepare(`PRAGMA table_info(processed_news)`).all();
+const hasAgentId = processedNewsColumns.some(column => column.name === 'agent_id');
+if (!hasAgentId) {
+    db.exec(`ALTER TABLE processed_news ADD COLUMN agent_id TEXT`);
+}
+
 // Create a table for news if you need it
 // For simplicity, we won't store multiple articles long-term here, just processed references
 db.exec(`

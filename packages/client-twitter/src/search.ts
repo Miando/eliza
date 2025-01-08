@@ -62,7 +62,7 @@ export class TwitterSearchClient {
         this.engageWithSearchTerms();
         setTimeout(
             () => this.engageWithSearchTermsLoop(),
-            (Math.floor(Math.random() * (120 - 60 + 1)) + 60) * 60 * 1000
+            (Math.floor(Math.random() * (480 - 240 + 1)) + 60) * 60 * 1000
         );
     }
 

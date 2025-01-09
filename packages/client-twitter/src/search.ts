@@ -62,7 +62,7 @@ export class TwitterSearchClient {
         this.engageWithSearchTerms();
         setTimeout(
             () => this.engageWithSearchTermsLoop(),
-            (Math.floor(Math.random() * (480 - 240 + 1)) + 60) * 60 * 1000
+            (Math.floor(Math.random() * (240 - 120 + 1)) + 60) * 60 * 1000
         );
     }
 
@@ -74,8 +74,8 @@ export class TwitterSearchClient {
             ];
 
             console.log("Fetching search tweets");
-            // TODO: we wait 5 seconds here to avoid getting rate limited on startup, but we should queue
-            await new Promise((resolve) => setTimeout(resolve, 5000));
+            // TODO: we wait 10 seconds here to avoid getting rate limited on startup, but we should queue
+            await new Promise((resolve) => setTimeout(resolve, 10000));
             const recentTweets = await this.client.fetchSearchTweets(
                 searchTerm,
                 20,
@@ -83,7 +83,7 @@ export class TwitterSearchClient {
             );
             console.log("Search tweets fetched");
 
-            const homeTimeline = await this.client.fetchHomeTimeline(50);
+            const homeTimeline = await this.client.fetchHomeTimeline(5);
 
             await this.client.cacheTimeline(homeTimeline);
 

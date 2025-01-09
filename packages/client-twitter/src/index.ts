@@ -1,9 +1,38 @@
 import { TwitterPostClient } from "./post.ts";
 import { TwitterSearchClient } from "./search.ts";
 import { TwitterInteractionClient } from "./interactions.ts";
-import { IAgentRuntime, Client, elizaLogger } from "@ai16z/eliza";
+import {IAgentRuntime, Client, elizaLogger, Character} from "@ai16z/eliza";
 import { validateTwitterConfig } from "./environment.ts";
 import { ClientBase } from "./base.ts";
+
+function isFalsish(input: any): boolean {
+    // If the input is exactly NaN, return true
+    if (Number.isNaN(input)) {
+        return true;
+    }
+
+    // Convert input to a string if it's not null or undefined
+    const value = input == null ? "" : String(input);
+
+    // List of common falsish string representations
+    const falsishValues = [
+        "false",
+        "0",
+        "no",
+        "n",
+        "off",
+        "null",
+        "undefined",
+        "",
+    ];
+
+    // Check if the value (trimmed and lowercased) is in the falsish list
+    return falsishValues.includes(value.trim().toLowerCase());
+}
+
+function getSecret(character: Character, secret: string) {
+    return character.settings?.secrets?.[secret] || process.env[secret];
+}
 
 class TwitterManager {
     client: ClientBase;
@@ -13,7 +42,7 @@ class TwitterManager {
     constructor(runtime: IAgentRuntime, enableSearch:boolean) {
         this.client = new ClientBase(runtime);
         this.post = new TwitterPostClient(this.client, runtime);
-
+        enableSearch = !isFalsish(getSecret(runtime.character, "TWITTER_SEARCH_ENABLE"));
         if (enableSearch) {
           // this searches topics from character file
           elizaLogger.warn('Twitter/X client running in a mode that:')
@@ -33,19 +62,20 @@ export const TwitterClientInterface: Client = {
         await validateTwitterConfig(runtime);
 
         elizaLogger.log("Twitter client started");
-
+        const enableSearch = !isFalsish(getSecret(runtime.character, "TWITTER_SEARCH_ENABLE"));
         // enableSearch is just set previous to this call
         // so enableSearch can change over time
         // and changing it won't stop the SearchClient in the existing instance
-        const manager = new TwitterManager(runtime, this.enableSearch);
+        const manager = new TwitterManager(runtime, enableSearch);
 
         await manager.client.init();
 
         await manager.post.start();
 
         await manager.interaction.start();
-
-        //await manager.search.start(); // don't run the search by default
+        if (enableSearch) {
+            await manager.search.start();
+        }
 
         return manager;
     },

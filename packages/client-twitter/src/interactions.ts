@@ -398,11 +398,9 @@ export class TwitterInteractionClient {
         const shouldRespondContext = composeContext({
             state,
             template:
-                this.runtime.character.templates?.twitterShouldRespondTemplate?.(
-                    validTargetUsersStr
-                ) ||
-                this.runtime.character?.templates?.shouldRespondTemplate ||
-                twitterShouldRespondTemplate(validTargetUsersStr),
+                typeof this.runtime.character.templates?.twitterShouldRespondTemplate === 'string'
+                    ? this.runtime.character.templates?.twitterShouldRespondTemplate
+                    : twitterShouldRespondTemplate(validTargetUsersStr), // Use the default template if the character doesn't have a custom one
         });
 
         const shouldRespond = await generateShouldRespond({

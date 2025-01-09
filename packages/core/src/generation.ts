@@ -574,7 +574,7 @@ export async function generateText({
                 throw new Error(errorMessage);
             }
         }
-        elizaLogger.info("Response:", response);
+        elizaLogger.log("Response:", response);
         return response;
     } catch (error) {
         elizaLogger.error("Error in generateText:", error);
@@ -916,7 +916,7 @@ export async function generateMessageResponse({
                 modelClass,
             });
             elizaLogger.log("Generated message response..");
-
+            elizaLogger.log("Response:", response);
             // try parsing the response as JSON, if null then try again
             const parsedContent = parseJSONObjectFromText(response) as Content;
             if (!parsedContent) {

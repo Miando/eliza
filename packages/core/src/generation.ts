@@ -205,10 +205,11 @@ export async function generateText({
                     presencePenalty: presence_penalty,
                 });
 
-                // elizaLogger.info("Response OpenAI:", {
-                //     response: openaiResponse,
-                // });
+
                 response = openaiResponse;
+                elizaLogger.info("Response OpenAI:", {
+                    response: response,
+                });
                 elizaLogger.log("Received response from OpenAI model.");
                 break;
             }

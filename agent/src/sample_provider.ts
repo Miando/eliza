@@ -39,6 +39,7 @@ export const myProvider: Provider = {
                 `);
 
                 for (const article of data.data) {
+                    elizaLogger.log(`Processing article: ${article.news_url}, runtime.agentId: ${runtime.agentId}`);
                     const existing = checkStmt.get(article.news_url, runtime.agentId);
 
                     if (existing) {

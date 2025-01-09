@@ -418,11 +418,13 @@ export class TwitterInteractionClient {
         const context = composeContext({
             state,
             template:
-                this.runtime.character.templates
-                    ?.twitterMessageHandlerTemplate ||
-                this.runtime.character?.templates?.messageHandlerTemplate ||
-                twitterMessageHandlerTemplate,
+                this.runtime.character.templates?.twitterMessageHandlerTemplate
+                    ? this.runtime.character.templates.twitterMessageHandlerTemplate + messageCompletionFooter
+                    : this.runtime.character?.templates?.messageHandlerTemplate
+                    ? this.runtime.character.templates.messageHandlerTemplate + messageCompletionFooter
+                    : twitterMessageHandlerTemplate,
         });
+
 
         elizaLogger.debug("Interactions prompt:\n" + context);
 

@@ -248,9 +248,9 @@ export class TwitterSearchClient {
 
             const context = composeContext({
                 state,
-                template:
-                    this.runtime.character.templates?.twitterSearchTemplate ||
-                    twitterSearchTemplate,
+                template: this.runtime.character.templates?.twitterSearchTemplate
+                    ? this.runtime.character.templates.twitterSearchTemplate + messageCompletionFooter
+                    : twitterSearchTemplate,
             });
 
             const responseContent = await generateMessageResponse({

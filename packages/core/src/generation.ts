@@ -163,7 +163,7 @@ export async function generateText({
         let response: string;
 
         const _stop = stop || models[provider].settings.stop;
-        elizaLogger.debug(
+        elizaLogger.log(
             `Using provider: ${provider}, model: ${model}, temperature: ${temperature}, max response length: ${max_response_length}`
         );
 
@@ -209,7 +209,7 @@ export async function generateText({
                 //     response: openaiResponse,
                 // });
                 response = openaiResponse;
-                elizaLogger.debug("Received response from OpenAI model.");
+                elizaLogger.log("Received response from OpenAI model.");
                 break;
             }
 
@@ -914,11 +914,12 @@ export async function generateMessageResponse({
                 context,
                 modelClass,
             });
+            elizaLogger.log("Generated message response..");
 
             // try parsing the response as JSON, if null then try again
             const parsedContent = parseJSONObjectFromText(response) as Content;
             if (!parsedContent) {
-                elizaLogger.debug("parsedContent is null, retrying");
+                elizaLogger.log("parsedContent is null, retrying");
                 continue;
             }
 
@@ -928,7 +929,7 @@ export async function generateMessageResponse({
             // wait for 2 seconds
             retryLength *= 2;
             await new Promise((resolve) => setTimeout(resolve, retryLength));
-            elizaLogger.debug("Retrying...");
+            elizaLogger.log("Retrying...");
         }
     }
 }

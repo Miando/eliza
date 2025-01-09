@@ -6,7 +6,7 @@ import {resolve} from "path";
 
 const MANUAL_NEWS_PATH = resolve("manual_news.txt");
 const API_ENDPOINT = 'https://cryptonews-api.com/api/v1';
-const TICKERS = ['BEAM', 'FLOKI', 'SAND', 'GALA', 'IMX', 'AXS', 'MANA', 'ENJ', 'ILV', 'ALICE', 'YGG', 'UOS', 'WAXP'];
+const TICKERS = ['BEAM', 'BTC', 'SAND', 'GALA', 'IMX', 'AXS', 'MANA', 'ENJ', 'ILV', 'ALICE', 'YGG', 'UOS', 'WAXP'];
 const TIMEFRAME_HOURS = 24;
 
 export const myProvider: Provider = {
@@ -27,62 +27,59 @@ export const myProvider: Provider = {
 
                 }
 
-                const checkStmt = db.prepare(`SELECT url, processed_at, parse_status
-                                              FROM processed_news
-                                              WHERE url = ? AND agent_id = ?`);
-                const insertStmt = db.prepare(` INSERT OR REPLACE INTO processed_news (url, processed_at, parse_status, agent_id) VALUES (?, ?, ?, ?)`);
+                const checkStmt = db.prepare(`
+                    SELECT url
+                    FROM processed_news
+                    WHERE url = ? AND agent_id = ?
+                `);
 
+                const insertStmt = db.prepare(`
+                    INSERT OR IGNORE INTO processed_news (url, processed_at, parse_status, agent_id)
+                    VALUES (?, ?, ?, ?)
+                `);
 
                 for (const article of data.data) {
                     const existing = checkStmt.get(article.news_url, runtime.agentId);
 
-                    if (!existing) {
-                        // Not processed in the last day (or ever)
-                        // Attempt to parse full text:
-                        let fullText = "";
-                        let parseStatus = "failed";
-                        try {
-                            const parsed = await extract(article.news_url);
-                            if (parsed && parsed.content) {
-                                fullText = parsed.content.trim();
-                                parseStatus = "success";
-                            }
-                        } catch (parseErr) {
-                            elizaLogger.error(`Parsing failed for ${article.news_url}:`, parseErr);
-                        }
-
-                        // Insert into processed_news table
-                        insertStmt.run(article.news_url, new Date().toISOString(), parseStatus, runtime.agentId);
-
-                        // If parse failed, we still return something?
-                        // The requirement says if it can't parse, just mark processed but no text
-                        // so in that case, we just skip and continue to the next article
-                        if (parseStatus === "failed") {
-                            elizaLogger.log(`Article parse failed, marked as processed: ${article.news_url}`);
-                            // Move on to the next article
-                            continue;
-                        }
-
-                        // If successful, we have full_text now
-                        const ticker = article.tickers && article.tickers.length > 0 ? article.tickers[0] : "Unknown";
-                        const title = article.title || "No Title";
-                        const snippet = article.text || "No snippet available";
-                        const publishedAt = article.date || "Unknown date";
-                        const newsUrl = article.news_url;
-
-                        // Provide a brief context chunk
-                        // We have full text, but might be long. Just show a snippet or first few lines in context.
-                        const shortExtract = fullText.split('\n').slice(0, 3).join('\n') + '...'; // a short snippet from the full text
-
-                        // The context we provide to the agent
-                        const contextContent = `**${ticker} News**: ${title}\nShort Snippet:\n${shortExtract}\nPublished at: ${publishedAt}\nSource: ${newsUrl}`;
-
-                        elizaLogger.log(`Providing new article context: ${title} (${newsUrl})`);
-                        return `\n\n#Today News:\n${contextContent}`;
-                    } else {
-                        // Already processed - skip
+                    if (existing) {
+                        // Article already processed for this agent, skip
+                        elizaLogger.log(`Article already processed for agent: ${runtime.agentId}, URL: ${article.news_url}`);
                         continue;
                     }
+
+                    // Attempt to parse full text
+                    let fullText = "";
+                    let parseStatus = "failed";
+                    try {
+                        const parsed = await extract(article.news_url);
+                        if (parsed && parsed.content) {
+                            fullText = parsed.content.trim();
+                            parseStatus = "success";
+                        }
+                    } catch (parseErr) {
+                        elizaLogger.error(`Parsing failed for ${article.news_url}:`, parseErr);
+                    }
+
+                    // Insert into processed_news table
+                    insertStmt.run(article.news_url, new Date().toISOString(), parseStatus, runtime.agentId);
+
+                    if (parseStatus === "failed") {
+                        elizaLogger.log(`Article parse failed, marked as processed: ${article.news_url}`);
+                        continue; // Skip to next article
+                    }
+
+                    // Build the article context content
+                    const ticker = article.tickers && article.tickers.length > 0 ? article.tickers[0] : "Unknown";
+                    const title = article.title || "No Title";
+                    const snippet = article.text || "No snippet available";
+                    const publishedAt = article.date || "Unknown date";
+                    const newsUrl = article.news_url;
+                    const shortExtract = fullText.split('\n').slice(0, 3).join('\n') + '...';
+
+                    const contextContent = `**${ticker} News**: ${title}\nShort Snippet:\n${shortExtract}\nPublished at: ${publishedAt}\nSource: ${newsUrl}`;
+
+                    elizaLogger.log(`Providing new article context: ${title} (${newsUrl})`);
+                    return `\n\n#Today News:\n${contextContent}`;
                 }
 
                 // If we get here, all articles are processed or failed parse

@@ -13,9 +13,10 @@ const db = new Database(dbPath);
 // Create the processed_news table if not exists
 db.exec(`
 CREATE TABLE IF NOT EXISTS processed_news (
-  url TEXT PRIMARY KEY,
+  url TEXT,
   processed_at TEXT,
-  parse_status TEXT
+  parse_status TEXT,
+  agent_id TEXT
 );
 `);
 
@@ -36,7 +37,7 @@ CREATE TABLE IF NOT EXISTS news (
   description TEXT,
   full_text TEXT,
   published_at TEXT,
-  url TEXT UNIQUE,
+  url TEXT,
   posted INTEGER DEFAULT 0,
   parse_status TEXT DEFAULT 'pending'
 );

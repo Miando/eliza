@@ -12,3 +12,5 @@ export const brainBoostPlugin: Plugin = {
     services: [],
     clients: [],
 };
+
+export default brainBoostPlugin;

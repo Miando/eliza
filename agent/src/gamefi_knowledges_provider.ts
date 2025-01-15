@@ -17,7 +17,7 @@ const gameFiKnowledgesProvider: Provider = {
             messages: recentMessagesData,
             actors: state?.actorsData,
         });
-
+        return "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
         const userEmbedding = await embed(runtime, message.content.text);
 
         const memoryManager = new MemoryManager({

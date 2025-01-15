@@ -174,25 +174,25 @@ class MockDatabaseAdapter extends DatabaseAdapter {
         ];
     }
 
-    // Mock method for searching memories
-    async searchMemories(params: {
-        tableName: string;
-        roomId: `${string}-${string}-${string}-${string}-${string}`;
-        embedding: number[];
-        match_threshold: number;
-        match_count: number;
-        unique: boolean;
-    }): Promise<Memory[]> {
-        return [
-            {
-                id: "memory-id" as UUID,
-                content: "Test Memory",
-                roomId: params.roomId,
-                userId: "user-id" as UUID,
-                agentId: "agent-id" as UUID,
-            },
-        ] as unknown as Memory[];
-    }
+    // // Mock method for searching memories
+    // async searchMemories(params: {
+    //     tableName: string;
+    //     roomId: `${string}-${string}-${string}-${string}-${string}`;
+    //     embedding: number[];
+    //     match_threshold: number;
+    //     match_count: number;
+    //     unique: boolean;
+    // }): Promise<Memory[]> {
+    //     return [
+    //         {
+    //             id: "memory-id" as UUID,
+    //             content: "Test Memory",
+    //             roomId: params.roomId,
+    //             userId: "user-id" as UUID,
+    //             agentId: "agent-id" as UUID,
+    //         },
+    //     ] as unknown as Memory[];
+    // }
 
     // Mock method for getting account by ID
     async getAccountById(userId: UUID): Promise<Account | null> {

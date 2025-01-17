@@ -91,14 +91,14 @@ export class MemoryManager implements IMemoryManager {
         start,
         end,
     }: {
-        roomId: UUID;
+        roomId?: UUID;
         count?: number;
         unique?: boolean;
         start?: number;
         end?: number;
     }): Promise<Memory[]> {
         return await this.runtime.databaseAdapter.getMemories({
-            roomId,
+            ...(roomId && { roomId }), // Добавляем roomId только если он задан
             count,
             unique,
             tableName: this.tableName,
@@ -134,6 +134,38 @@ export class MemoryManager implements IMemoryManager {
      * @param opts.unique Whether to retrieve unique memories only.
      * @returns A Promise resolving to an array of Memory objects that match the embedding.
      */
+    async searchMemoriesByEmbeddingGeneral(
+        embedding: number[],
+        opts: {
+            match_threshold?: number;
+            count?: number;
+            unique?: boolean;
+        }
+    ): Promise<Memory[]> {
+        const {
+            match_threshold = defaultMatchThreshold,
+            count = defaultMatchCount,
+            unique,
+        } = opts;
+
+
+        const query: {
+            tableName: string;
+            embedding: number[];
+            match_threshold: number;
+            match_count: number;
+            unique: boolean;
+        } = {
+            tableName: this.tableName, // Предполагается, что `this.tableName` определён
+            embedding: embedding,
+            match_threshold: match_threshold,
+            match_count: count,
+            unique: !!unique,
+        };
+
+        return await this.runtime.databaseAdapter.searchMemoriesByEmbeddingGeneral(embedding, query);
+    }
+
     async searchMemoriesByEmbedding(
         embedding: number[],
         opts: {
@@ -150,20 +182,29 @@ export class MemoryManager implements IMemoryManager {
             unique,
         } = opts;
 
-        const query: any = {
-            tableName: this.tableName,
-            agentId: this.runtime.agentId,
+
+        const query: {
+            tableName: string;
+            agentId?: UUID;
+            embedding: number[];
+            match_threshold: number;
+            match_count: number;
+            unique: boolean;
+            roomId?: UUID;
+        } = {
+            tableName: this.tableName, // Предполагается, что `this.tableName` определён
+            agentId: this.runtime.agentId, // Если `agentId` нужен, используйте его
             embedding: embedding,
-            match_threshold: match_threshold,
+            match_threshold: 0.7,
             match_count: count,
             unique: !!unique,
         };
 
-        if (roomId) {
-            query.roomId = roomId;
-        }
+        // if (roomId) {
+        //     query.roomId = roomId;
+        // }
 
-        return await this.runtime.databaseAdapter.searchMemories(query);
+        return await this.runtime.databaseAdapter.searchMemoriesByEmbedding(embedding, query);
     }
 
     /**

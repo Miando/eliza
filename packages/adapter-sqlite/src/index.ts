@@ -190,10 +190,6 @@ export class SqliteDatabaseAdapter
     }
 
     async createMemory(memory: Memory, tableName: string): Promise<void> {
-        // Delete any existing memory with the same ID first
-        // const deleteSql = `DELETE FROM memories WHERE id = ? AND type = ?`;
-        // this.db.prepare(deleteSql).run(memory.id, tableName);
-
         let isUnique = true;
 
         if (memory.embedding) {
@@ -204,7 +200,7 @@ export class SqliteDatabaseAdapter
                     tableName,
                     agentId: memory.agentId,
                     roomId: memory.roomId,
-                    match_threshold: 0.95, // 5% similarity threshold
+                    match_threshold: 0.5, // 5% similarity threshold
                     count: 1,
                 }
             );
@@ -215,13 +211,20 @@ export class SqliteDatabaseAdapter
         const content = JSON.stringify(memory.content);
         const createdAt = memory.createdAt ?? Date.now();
 
-        // Insert the memory with the appropriate 'unique' value
-        const sql = `INSERT OR REPLACE INTO memories (id, type, content, embedding, userId, roomId, agentId, \`unique\`, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+        // Преобразуем embedding в бинарный формат
+        const embeddingBuffer = memory.embedding
+            ? Buffer.from(new Float32Array(memory.embedding).buffer)
+            : null;
+
+        const sql = `
+            INSERT OR REPLACE INTO memories
+            (id, type, content, embedding, userId, roomId, agentId, \`unique\`, createdAt)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
         this.db.prepare(sql).run(
             memory.id ?? v4(),
             tableName,
             content,
-            new Float32Array(memory.embedding!), // Store as Float32Array
+            embeddingBuffer, // Сохраняем в бинарном формате
             memory.userId,
             memory.roomId,
             memory.agentId,
@@ -229,6 +232,7 @@ export class SqliteDatabaseAdapter
             createdAt
         );
     }
+
 
     async searchMemories(params: {
         tableName: string;
@@ -248,8 +252,8 @@ export class SqliteDatabaseAdapter
 
         let sql = `
             SELECT *, vec_distance_L2(embedding, ?) AS similarity
-            FROM memories 
-            WHERE type = ? 
+            FROM memories
+            WHERE type = ?
             AND roomId = ?`;
 
         if (params.unique) {
@@ -290,35 +294,35 @@ export class SqliteDatabaseAdapter
         }
     ): Promise<Memory[]> {
         const queryParams = [
-            // JSON.stringify(embedding),
-            new Float32Array(embedding),
+            Buffer.from(new Float32Array(embedding).buffer), // Преобразование в BLOB
             params.tableName,
             params.agentId,
+            params.match_threshold ?? 0.7, // Порог схожести
+            params.count ?? 10, // Количество результатов
         ];
 
+
         let sql = `
-      SELECT *, vec_distance_L2(embedding, ?) AS similarity
-      FROM memories
-      WHERE embedding IS NOT NULL AND type = ? AND agentId = ?`;
-
-        if (params.unique) {
-            sql += " AND `unique` = 1";
-        }
-
+          SELECT *, vec_distance_L2(embedding, ?) AS similarity
+          FROM memories
+          WHERE embedding IS NOT NULL
+            AND type = ?
+            AND agentId = ?
+            AND similarity <= ?
+          ORDER BY similarity ASC
+          LIMIT ?`;
         if (params.roomId) {
             sql += " AND roomId = ?";
             queryParams.push(params.roomId);
         }
-        sql += ` ORDER BY similarity DESC`;
 
-        if (params.count) {
-            sql += " LIMIT ?";
-            queryParams.push(params.count.toString());
-        }
+        console.log("SQL Query:", sql);
+        console.log("Query Params:", queryParams);
 
         const memories = this.db.prepare(sql).all(...queryParams) as (Memory & {
             similarity: number;
         })[];
+
         return memories.map((memory) => ({
             ...memory,
             createdAt:
@@ -328,6 +332,50 @@ export class SqliteDatabaseAdapter
             content: JSON.parse(memory.content as unknown as string),
         }));
     }
+
+    async searchMemoriesByEmbeddingGeneral(
+        embedding: number[],
+        params: {
+            match_threshold?: number;
+            count?: number;
+            unique?: boolean;
+            tableName: string;
+        }
+    ): Promise<Memory[]> {
+        const queryParams = [
+            Buffer.from(new Float32Array(embedding).buffer), // Преобразование в BLOB
+            params.tableName,
+            params.match_threshold ?? 0.7, // Порог схожести
+            params.count ?? 10, // Количество результатов
+        ];
+
+        let sql = `
+          SELECT *, vec_distance_L2(embedding, ?) AS similarity
+          FROM memories
+          WHERE embedding IS NOT NULL
+            AND type = ?
+            AND similarity <= ?
+          ORDER BY similarity ASC
+          LIMIT ?`;
+
+        console.log("SQL Query:", sql);
+        console.log("Query Params:", queryParams);
+
+        const memories = this.db.prepare(sql).all(...queryParams) as (Memory & {
+            similarity: number;
+        })[];
+
+        return memories.map((memory) => ({
+            ...memory,
+            createdAt:
+                typeof memory.createdAt === "string"
+                    ? Date.parse(memory.createdAt as string)
+                    : memory.createdAt,
+            content: JSON.parse(memory.content as unknown as string),
+        }));
+    }
+
+
 
     async getCachedEmbeddings(opts: {
         query_table_name: string;
@@ -340,24 +388,24 @@ export class SqliteDatabaseAdapter
         // First get content text and calculate Levenshtein distance
         const sql = `
             WITH content_text AS (
-                SELECT 
+                SELECT
                     embedding,
                     json_extract(
                         json(content),
                         '$.' || ? || '.' || ?
                     ) as content_text
-                FROM memories 
+                FROM memories
                 WHERE type = ?
                 AND json_extract(
                     json(content),
                     '$.' || ? || '.' || ?
                 ) IS NOT NULL
             )
-            SELECT 
+            SELECT
                 embedding,
                 length(?) + length(content_text) - (
                     length(?) + length(content_text) - (
-                        length(replace(lower(?), lower(content_text), '')) + 
+                        length(replace(lower(?), lower(content_text), '')) +
                         length(replace(lower(content_text), lower(?), ''))
                     ) / 2
                 ) as levenshtein_score
@@ -414,7 +462,7 @@ export class SqliteDatabaseAdapter
     }
 
     async getMemories(params: {
-        roomId: UUID;
+        roomId?: UUID;
         count?: number;
         unique?: boolean;
         tableName: string;
@@ -425,16 +473,15 @@ export class SqliteDatabaseAdapter
         if (!params.tableName) {
             throw new Error("tableName is required");
         }
-        if (!params.roomId) {
-            throw new Error("roomId is required");
-        }
-        let sql = `SELECT * FROM memories WHERE type = ? AND agentId = ? AND roomId = ?`;
 
-        const queryParams = [
-            params.tableName,
-            params.agentId,
-            params.roomId,
-        ] as any[];
+        let sql = `SELECT * FROM memories WHERE type = ? AND agentId = ?`;
+        const queryParams = [params.tableName, params.agentId] as any[];
+
+        // Добавляем условие по roomId только если оно задано
+        if (params.roomId) {
+            sql += " AND roomId = ?";
+            queryParams.push(params.roomId);
+        }
 
         if (params.unique) {
             sql += " AND `unique` = 1";
@@ -475,8 +522,8 @@ export class SqliteDatabaseAdapter
     }
 
     async removeAllMemories(roomId: UUID, tableName: string): Promise<void> {
-        const sql = `DELETE FROM memories WHERE type = ? AND roomId = ?`;
-        this.db.prepare(sql).run(tableName, roomId);
+        const sql = `DELETE FROM memories WHERE type = ?`;
+        this.db.prepare(sql).run(tableName);
     }
 
     async countMemories(

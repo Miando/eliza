@@ -801,7 +801,7 @@ export interface IDatabaseAdapter {
 
     /** Get memories matching criteria */
     getMemories(params: {
-        roomId: UUID;
+        roomId?: UUID;
         count?: number;
         unique?: boolean;
         tableName: string;
@@ -858,6 +858,16 @@ export interface IDatabaseAdapter {
             count?: number;
             roomId?: UUID;
             agentId?: UUID;
+            unique?: boolean;
+            tableName: string;
+        }
+    ): Promise<Memory[]>;
+
+    searchMemoriesByEmbeddingGeneral(
+        embedding: number[],
+        params: {
+            match_threshold?: number;
+            count?: number;
             unique?: boolean;
             tableName: string;
         }
@@ -957,7 +967,7 @@ export interface IMemoryManager {
     addEmbeddingToMemory(memory: Memory): Promise<Memory>;
 
     getMemories(opts: {
-        roomId: UUID;
+        roomId?: UUID;
         count?: number;
         unique?: boolean;
         start?: number;
@@ -976,6 +986,14 @@ export interface IMemoryManager {
             match_threshold?: number;
             count?: number;
             roomId: UUID;
+            unique?: boolean;
+        }
+    ): Promise<Memory[]>;
+    searchMemoriesByEmbeddingGeneral(
+        embedding: number[],
+        opts: {
+            match_threshold?: number;
+            count?: number;
             unique?: boolean;
         }
     ): Promise<Memory[]>;

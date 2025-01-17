@@ -12,7 +12,7 @@ import {
 const gameFiKnowledgesProvider: Provider = {
     get: async (runtime: IAgentRuntime, message: Memory, state?: State) => {
         const recentMessagesData = state?.recentMessagesData?.slice(-10);
-        const messagee = "Who is Donald Trump?"
+        const messagee = "Do you know something about massive wildfires in Los Angeles?"
         elizaLogger.info(message.content.text)
         const summary = `
         Massive wildfires have been raging in Los Angeles since January 7, 2025, with the hardest-hit areas being Pacific Palisades and Eaton Canyon.

@@ -364,6 +364,56 @@ export class SqlJsDatabaseAdapter
         return memories;
     }
 
+    async searchMemoriesByEmbeddingGeneral(
+        _embedding: number[],
+        params: {
+            match_threshold?: number;
+            count?: number;
+            unique?: boolean;
+            tableName: string;
+        }
+    ): Promise<Memory[]> {
+        let sql =
+            `SELECT *` +
+            // TODO: Uncomment when we compile sql.js with vss
+            // `, (1 - vss_distance_l2(embedding, ?)) AS similarity`+
+            ` FROM memories
+        WHERE type = ?`;
+
+        if (params.unique) {
+            sql += " AND `unique` = 1";
+        }
+        // TODO: Uncomment when we compile sql.js with vss
+        // sql += ` ORDER BY similarity DESC`;
+
+        if (params.count) {
+            sql += " LIMIT ?";
+        }
+
+        const stmt = this.db.prepare(sql);
+        const bindings = [
+            // JSON.stringify(embedding),
+            params.tableName,
+        ];
+        if (params.count) {
+            bindings.push(params.count.toString());
+        }
+
+        stmt.bind(bindings);
+        const memories: (Memory & { similarity: number })[] = [];
+        while (stmt.step()) {
+            const memory = stmt.getAsObject() as unknown as Memory & {
+                similarity: number;
+            };
+            memories.push({
+                ...memory,
+                content: JSON.parse(memory.content as unknown as string),
+            });
+        }
+        stmt.free();
+        return memories;
+    }
+
     async getCachedEmbeddings(opts: {
         query_table_name: string;
         query_threshold: number;

@@ -186,6 +186,16 @@ export abstract class DatabaseAdapter<DB = any> implements IDatabaseAdapter {
         }
     ): Promise<Memory[]>;
 
+   abstract searchMemoriesByEmbeddingGeneral(
+        embedding: number[],
+        params: {
+            match_threshold?: number;
+            count?: number;
+            unique?: boolean;
+            tableName: string;
+        }
+    ): Promise<Memory[]>;
+
     /**
      * Creates a new memory in the database.
      * @param memory The memory object to create.

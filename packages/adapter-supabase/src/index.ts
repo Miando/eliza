@@ -346,6 +346,32 @@ export class SupabaseDatabaseAdapter extends DatabaseAdapter {
             ...memory,
         }));
     }
+    async searchMemoriesByEmbeddingGeneral(
+        embedding: number[],
+        params: {
+            match_threshold?: number;
+            count?: number;
+            unique?: boolean;
+            tableName: string;
+        }
+    ): Promise<Memory[]> {
+        const queryParams = {
+            query_table_name: params.tableName,
+            query_embedding: embedding,
+            query_match_threshold: params.match_threshold,
+            query_match_count: params.count,
+            query_unique: !!params.unique,
+        };
+
+
+        const result = await this.supabase.rpc("search_memories", queryParams);
+        if (result.error) {
+            throw new Error(JSON.stringify(result.error));
+        }
+        return result.data.map((memory) => ({
+            ...memory,
+        }));
+    }
 
     async getMemoryById(memoryId: UUID): Promise<Memory | null> {
         const { data, error } = await this.supabase

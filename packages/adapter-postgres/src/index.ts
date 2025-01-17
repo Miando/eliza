@@ -1168,6 +1168,94 @@ export class PostgresDatabaseAdapter
         }, "searchMemoriesByEmbedding");
     }
 
+    async searchMemoriesByEmbeddingGeneral(
+        embedding: number[],
+        params: {
+            match_threshold?: number;
+            count?: number;
+            unique?: boolean;
+            tableName: string;
+        }
+    ): Promise<Memory[]> {
+        return this.withDatabase(async () => {
+            elizaLogger.debug("Incoming vector:", {
+                length: embedding.length,
+                sample: embedding.slice(0, 5),
+                isArray: Array.isArray(embedding),
+                allNumbers: embedding.every((n) => typeof n === "number"),
+            });
+
+            // Validate embedding dimension
+            if (embedding.length !== getEmbeddingConfig().dimensions) {
+                throw new Error(
+                    `Invalid embedding dimension: expected ${getEmbeddingConfig().dimensions}, got ${embedding.length}`
+                );
+            }
+
+            // Ensure vector is properly formatted
+            const cleanVector = embedding.map((n) => {
+                if (!Number.isFinite(n)) return 0;
+                // Limit precision to avoid floating point issues
+                return Number(n.toFixed(6));
+            });
+
+            // Format for Postgres pgvector
+            const vectorStr = `[${cleanVector.join(",")}]`;
+
+            elizaLogger.debug("Vector debug:", {
+                originalLength: embedding.length,
+                cleanLength: cleanVector.length,
+                sampleStr: vectorStr.slice(0, 100),
+            });
+
+            let sql = `
+                SELECT *,
+                1 - (embedding <-> $1::vector(${getEmbeddingConfig().dimensions})) as similarity
+                FROM memories
+                WHERE type = $2
+            `;
+
+            const values: any[] = [vectorStr, params.tableName];
+
+            // Log the query for debugging
+            elizaLogger.debug("Query debug:", {
+                sql: sql.slice(0, 200),
+                paramTypes: values.map((v) => typeof v),
+                vectorStrLength: vectorStr.length,
+            });
+
+            let paramCount = 2;
+
+            if (params.unique) {
+                sql += ` AND "unique" = true`;
+            }
+
+            if (params.match_threshold) {
+                paramCount++;
+                sql += ` AND 1 - (embedding <-> $1::vector) >= $${paramCount}`;
+                values.push(params.match_threshold);
+            }
+
+            sql += ` ORDER BY embedding <-> $1::vector`;
+
+            if (params.count) {
+                paramCount++;
+                sql += ` LIMIT $${paramCount}`;
+                values.push(params.count);
+            }
+
+            const { rows } = await this.pool.query(sql, values);
+            return rows.map((row) => ({
+                ...row,
+                content:
+                    typeof row.content === "string"
+                        ? JSON.parse(row.content)
+                        : row.content,
+                similarity: row.similarity,
+            }));
+        }, "searchMemoriesByEmbedding");
+    }
+
     async addParticipant(userId: UUID, roomId: UUID): Promise<boolean> {
         return this.withDatabase(async () => {
             try {

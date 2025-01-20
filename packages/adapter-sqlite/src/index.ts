@@ -2,6 +2,8 @@ export * from "./sqliteTables.ts";
 export * from "./sqlite_vec.ts";
 
 import { DatabaseAdapter, IDatabaseCacheAdapter } from "@ai16z/eliza";
+import { elizaLogger } from "@ai16z/eliza";
+
 import {
     Account,
     Actor,
@@ -220,6 +222,7 @@ export class SqliteDatabaseAdapter
             INSERT OR REPLACE INTO memories
             (id, type, content, embedding, userId, roomId, agentId, \`unique\`, createdAt)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+        elizaLogger.info("Creating Memory", memory.id, content, sql);
         this.db.prepare(sql).run(
             memory.id ?? v4(),
             tableName,
@@ -298,7 +301,6 @@ export class SqliteDatabaseAdapter
             params.tableName,
             params.agentId,
             params.match_threshold ?? 0.7, // Порог схожести
-            params.count ?? 10, // Количество результатов
         ];
 
 
@@ -309,13 +311,18 @@ export class SqliteDatabaseAdapter
             AND type = ?
             AND agentId = ?
             AND similarity <= ?
-          ORDER BY similarity ASC
-          LIMIT ?`;
+        `;
+
         if (params.roomId) {
             sql += " AND roomId = ?";
             queryParams.push(params.roomId);
         }
 
+        sql += `
+          ORDER BY similarity ASC
+          LIMIT ?;
+        `;
+        queryParams.push(params.count ?? 10); // Количество результатов
         console.log("SQL Query:", sql);
         console.log("Query Params:", queryParams);
 
@@ -350,7 +357,7 @@ export class SqliteDatabaseAdapter
         ];
 
         let sql = `
-          SELECT *, vec_distance_L2(embedding, ?) AS similarity
+          SELECT DISTINCT content, vec_distance_L2(embedding, ?) AS similarity
           FROM memories
           WHERE embedding IS NOT NULL
             AND type = ?

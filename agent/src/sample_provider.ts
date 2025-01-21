@@ -9,8 +9,19 @@ const API_ENDPOINT = 'https://cryptonews-api.com/api/v1';
 const TICKERS = ['BEAM', 'FLOKI', 'SAND', 'GALA', 'IMX', 'AXS', 'MANA', 'ENJ', 'ILV', 'ALICE', 'YGG', 'UOS', 'WAXP'];
 const TIMEFRAME_HOURS = 24;
 
+function checkIfAllWordsExist(text: string, topics: string[]): boolean {
+    const lowerCaseText = text.toLowerCase();
+    return topics.every(topic => lowerCaseText.includes(topic.toLowerCase()));
+}
+
 export const myProvider: Provider = {
         get: async (runtime: IAgentRuntime, message: Memory, state?: State) => {
+            const messageContentText = message.content.text;
+            const runtimeCharacterTopics = runtime.character.topics;
+            if (!checkIfAllWordsExist(messageContentText, runtimeCharacterTopics)) {
+                // skeep using provider for reply
+                return "";
+            }
             try {
                 const API_KEY = process.env.CRYPTONEWS_API_KEY;
                 if (!API_KEY) {

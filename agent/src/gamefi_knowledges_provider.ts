@@ -63,7 +63,7 @@ const gameFiKnowledgesProvider: Provider = {
 
         const relevantFacts = await memoryManager.searchMemoriesByEmbeddingGeneral(
             userEmbedding,
-            { count: 10, match_threshold: 0.8 }
+            { count: 20, match_threshold: 0.8 }
         );
 
         const formattedFacts = relevantFacts.map((fact, index) => {

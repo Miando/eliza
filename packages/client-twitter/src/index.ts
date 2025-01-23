@@ -1,9 +1,14 @@
+import { Client, elizaLogger, IAgentRuntime } from "@elizaos/core";
+import { ClientBase } from "./base.ts";
+import { validateTwitterConfig, TwitterConfig } from "./environment.ts";
+import { TwitterInteractionClient } from "./interactions.ts";
 import { TwitterPostClient } from "./post.ts";
 import { TwitterSearchClient } from "./search.ts";
 import { TwitterInteractionClient } from "./interactions.ts";
 import {IAgentRuntime, Client, elizaLogger, Character} from "@ai16z/eliza";
 import { validateTwitterConfig } from "./environment.ts";
 import { ClientBase } from "./base.ts";
+import { TwitterSpaceClient } from "./spaces.ts";
 
 function isFalsish(input: any): boolean {
     // If the input is exactly NaN, return true
@@ -39,8 +44,13 @@ class TwitterManager {
     post: TwitterPostClient;
     search: TwitterSearchClient;
     interaction: TwitterInteractionClient;
-    constructor(runtime: IAgentRuntime, enableSearch:boolean) {
-        this.client = new ClientBase(runtime);
+    space?: TwitterSpaceClient;
+
+    constructor(runtime: IAgentRuntime, twitterConfig: TwitterConfig) {
+        // Pass twitterConfig to the base client
+        this.client = new ClientBase(runtime, twitterConfig);
+
+        // Posting logic
         this.post = new TwitterPostClient(this.client, runtime);
         enableSearch = !isFalsish(getSecret(runtime.character, "TWITTER_SEARCH_ENABLE"));
         if (enableSearch) {
@@ -52,14 +62,21 @@ class TwitterManager {
           elizaLogger.warn('use at your own risk')
           this.search = new TwitterSearchClient(this.client, runtime); // don't start the search client by default
         }
+
+        // Mentions and interactions
         this.interaction = new TwitterInteractionClient(this.client, runtime);
+
+        // Optional Spaces logic (enabled if TWITTER_SPACES_ENABLE is true)
+        if (twitterConfig.TWITTER_SPACES_ENABLE) {
+            this.space = new TwitterSpaceClient(this.client, runtime);
+        }
     }
 }
 
 export const TwitterClientInterface: Client = {
-
     async start(runtime: IAgentRuntime) {
-        await validateTwitterConfig(runtime);
+        const twitterConfig: TwitterConfig =
+            await validateTwitterConfig(runtime);
 
         elizaLogger.log("Twitter client started");
         const enableSearch = !isFalsish(getSecret(runtime.character, "TWITTER_SEARCH_ENABLE"));

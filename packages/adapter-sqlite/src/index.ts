@@ -344,6 +344,7 @@ export class SqliteDatabaseAdapter
         embedding: number[],
         params: {
             match_threshold?: number;
+            match_count?: number;
             count?: number;
             unique?: boolean;
             tableName: string;
@@ -352,9 +353,10 @@ export class SqliteDatabaseAdapter
         const queryParams = [
             Buffer.from(new Float32Array(embedding).buffer), // Преобразование в BLOB
             params.tableName,
-            params.match_threshold ?? 0.7, // Порог схожести
-            params.count ?? 10, // Количество результатов
+            params.match_threshold, //?? 0.7, // Порог схожести
+            params.count ?? params.match_count ?? 10//?? 10, // Количество результатов
         ];
+        console.log("Query Params:", params);
 
         let sql = `
           SELECT DISTINCT content, vec_distance_L2(embedding, ?) AS similarity

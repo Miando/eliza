@@ -162,7 +162,6 @@ export class MemoryManager implements IMemoryManager {
             match_count: count,
             unique: !!unique,
         };
-
         return await this.runtime.databaseAdapter.searchMemoriesByEmbeddingGeneral(embedding, query);
     }
 

@@ -20,4 +20,22 @@ CREATE TABLE IF NOT EXISTS gamefi_knowledge_base (
 );
 `);
 
+// Проверяем и добавляем новый столбец "type", если его нет
+const tableInfo = db.prepare("PRAGMA table_info(gamefi_knowledge_base);").all();
+const hasTypeColumn = tableInfo.some((column) => column.name === "type");
+
+if (!hasTypeColumn) {
+    // Добавляем столбец "type"
+    db.exec(`
+        ALTER TABLE gamefi_knowledge_base ADD COLUMN type TEXT DEFAULT 'news';
+    `);
+
+    // Обновляем существующие записи, у которых type = NULL
+    db.exec(`
+        UPDATE gamefi_knowledge_base
+        SET type = 'news'
+        WHERE type IS NULL;
+    `);
+}
+
 export { db };

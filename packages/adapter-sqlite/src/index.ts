@@ -1,15 +1,10 @@
 export * from "./sqliteTables.ts";
 export * from "./sqlite_vec.ts";
 
-import { DatabaseAdapter, IDatabaseCacheAdapter } from "@ai16z/eliza";
-import { elizaLogger } from "@ai16z/eliza";
-
 import {
     DatabaseAdapter,
     elizaLogger,
     IDatabaseCacheAdapter,
-} from "@elizaos/core";
-import {
     Account,
     Actor,
     GoalStatus,
@@ -18,13 +13,13 @@ import {
     type Memory,
     type Relationship,
     type UUID,
-    RAGKnowledgeItem,
+    RAGKnowledgeItem
 } from "@elizaos/core";
+
 import { Database } from "better-sqlite3";
 import { v4 } from "uuid";
 import { load } from "./sqlite_vec.ts";
 import { sqliteTables } from "./sqliteTables.ts";
-
 export class SqliteDatabaseAdapter
     extends DatabaseAdapter<Database>
     implements IDatabaseCacheAdapter

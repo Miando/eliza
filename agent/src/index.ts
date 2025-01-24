@@ -555,9 +555,9 @@ export async function initializeClients(
         if (twitterClient) {
             clients.twitter = twitterClient;
 
-            (twitterClient as any).enableSearch = !isFalsish(
-                getSecret(character, "TWITTER_SEARCH_ENABLE")
-            );
+            // (twitterClient as any).enableSearch = !isFalsish(
+            //     getSecret(character, "TWITTER_SEARCH_ENABLE")
+            // );
         }
     }
 
@@ -975,7 +975,7 @@ async function startAgent(
             cache,
             token
         );
-        runtime.registerContextProvider(myProvider);
+        // runtime.registerContextProvider(myProvider);
 
         // start services/plugins/process knowledge
         await runtime.initialize();
@@ -1073,3 +1073,7 @@ startAgents().catch((error) => {
     elizaLogger.error("Unhandled error in startAgents:", error);
     process.exit(1);
 });
+function isFalsish(arg0: string) {
+    throw new Error("Function not implemented.");
+}
+

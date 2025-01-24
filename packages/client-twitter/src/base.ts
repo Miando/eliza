@@ -141,7 +141,7 @@ export class ClientBase extends EventEmitter {
         super();
         this.runtime = runtime;
         this.twitterConfig = twitterConfig;
-        const username = twitterConfig.TWITTER_USERNAME;
+        const username = this.runtime.getSetting("TWITTER_USERNAME");
         if (ClientBase._twitterClients[username]) {
             this.twitterClient = ClientBase._twitterClients[username];
         } else {

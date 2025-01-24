@@ -1052,7 +1052,7 @@ const startAgents = async () => {
     // upload some agent functionality into directClient
     directClient.startAgent = async (character) => {
         // Handle plugins
-        character.plugins = await handlePluginImporting(character.plugins);
+        // character.plugins = await handlePluginImporting(character.plugins);
 
         // wrap it so we don't have to inject directClient later
         return startAgent(character, directClient);

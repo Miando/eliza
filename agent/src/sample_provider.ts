@@ -18,6 +18,8 @@ export const myProvider: Provider = {
         get: async (runtime: IAgentRuntime, message: Memory, state?: State) => {
             const messageContentText = message.content.text;
             const runtimeCharacterTopics = runtime.character.topics;
+            elizaLogger.info("runtimeCharacterTopics", runtimeCharacterTopics);
+            elizaLogger.info("messageContentText", messageContentText);
             if (!checkIfAllWordsExist(messageContentText, runtimeCharacterTopics)) {
                 // skeep using provider for reply
                 return "";
@@ -26,7 +28,7 @@ export const myProvider: Provider = {
                 const API_KEY = process.env.CRYPTONEWS_API_KEY;
                 if (!API_KEY) {
                     elizaLogger.warn("No CRYPTONEWS_API_KEY configured. newsProvider returning empty.");
-                    return '\n\n#Today News:\nNo news found';
+                    return '\n\n#Today News:\nNo news found\n';
                 }
                 const url = `${API_ENDPOINT}?section=general&items=10&tickers=${TICKERS.join(',')}&token=${API_KEY}`;
                 const response = await fetch(url);
@@ -34,7 +36,7 @@ export const myProvider: Provider = {
 
                 if (!data || !data.data || data.data.length === 0) {
                     elizaLogger.log("No news retrieved from cryptonews-api");
-                    return '\n\n#Today News:\nNo news found';
+                    return '\n\n#Today News:\nNo news found\n';
 
                 }
 
@@ -72,13 +74,13 @@ export const myProvider: Provider = {
                         elizaLogger.error(`Parsing failed for ${article.news_url}:`, parseErr);
                     }
 
-                    // Insert into processed_news table
-                    insertStmt.run(article.news_url, new Date().toISOString(), parseStatus, runtime.agentId);
 
                     if (parseStatus === "failed") {
                         elizaLogger.log(`Article parse failed, marked as processed: ${article.news_url}`);
                         continue; // Skip to next article
                     }
+                    // Insert into processed_news table
+                    insertStmt.run(article.news_url, new Date().toISOString(), parseStatus, runtime.agentId);
 
                     // Build the article context content
                     const ticker = article.tickers && article.tickers.length > 0 ? article.tickers[0] : "Unknown";
@@ -100,7 +102,7 @@ export const myProvider: Provider = {
 
             } catch (error) {
                 elizaLogger.error("Error in newsProvider:", error);
-                return '\n\n#Today News:\nNo news found';
+                return '\n\n#Today News:\nNo news found\n';
             }
         },
     }
@@ -118,7 +120,7 @@ async function getManualNews() {
         if (!manualNews) {
             elizaLogger.log(`manual_news.txt is empty. Clearing file: ${MANUAL_NEWS_PATH}`);
             writeFileSync(MANUAL_NEWS_PATH, ""); // Clear the file
-            return '\n\n#Today News:\nNo news found';
+            return '\n\n#Today News:\nNo news found\n';
         }
 
         elizaLogger.log(`Providing news from manual_news.txt at path: ${MANUAL_NEWS_PATH}`);
@@ -126,6 +128,6 @@ async function getManualNews() {
         return `\n\n#Today News:\n${manualNews}`;
     } catch (err) {
         elizaLogger.error(`Failed to read manual_news.txt at path ${MANUAL_NEWS_PATH}:`, err);
-        return '\n\n#Today News:\nNo news found';
+        return '\n\n#Today News:\nNo news found\n';
     }
 }

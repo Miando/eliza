@@ -422,12 +422,12 @@ async sendStandardTweet(
                 try {
                     if (Array.isArray(mediaData) && mediaData.length > 0) {
                         const preparedMedia = mediaData.map(item => ({
-                            data: Buffer.isBuffer(item.data) ? item.data : Buffer.from(item.data),
+                            data: Buffer.isBuffer(item.data) ? item.data.toString('base64') : item.data,
                             mediaType: item.mediaType
                           }));
                         elizaLogger.info("Attempting media upload...");
-                        const result = await client.twitterClient.sendTweet(content, "1878147848232898985", mediaData);
-                        elizaLogger.debug("Media upload attempt completed");
+                        const result = await client.twitterClient.sendTweet(content, "1878147848232898985", preparedMedia);
+                        elizaLogger.info("Media upload attempt completed");
                         return result;
                     } else {
                         elizaLogger.info("Sending text-only tweet");

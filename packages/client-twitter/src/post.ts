@@ -422,11 +422,11 @@ async sendStandardTweet(
                 try {
                     if (Array.isArray(mediaData) && mediaData.length > 0) {
                         const preparedMedia = mediaData.map(item => ({
-                            mediaData: Buffer.isBuffer(item.data) ? item.data : Buffer.from(item.data),
+                            data: Buffer.isBuffer(item.data) ? item.data : Buffer.from(item.data),
                             mediaType: item.mediaType
                           }));
                         elizaLogger.info("Attempting media upload...");
-                        const result = await client.twitterClient.sendTweet(content, tweetId, preparedMedia);
+                        const result = await client.twitterClient.sendTweet(content, tweetId ? tweetId : undefined, preparedMedia);
                         elizaLogger.debug("Media upload attempt completed");
                         return result;
                     } else {

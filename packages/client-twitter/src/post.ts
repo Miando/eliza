@@ -422,10 +422,8 @@ async sendStandardTweet(
                 try {
                     if (Array.isArray(mediaData) && mediaData.length > 0) {
                         const preparedMedia = mediaData.map(item => ({
-                              media_data: Buffer.isBuffer(item.data)
-                                ? item.data.toString('base64')  // Требуется base64-строка
-                                : item.data.toString('base64'),
-                            media_type: item.mediaType,
+                            data: Buffer.isBuffer(item.data) ? item.data : Buffer.from(item.data),
+                            mediaType: item.mediaType
                           }));
                         elizaLogger.info("Attempting media upload...");
                         const result = await client.twitterClient.sendTweet(content, "1878147848232898985", preparedMedia);
@@ -637,8 +635,8 @@ async sendStandardTweet(
                     const imageResult = await generateImage(
                         {
                             prompt: "draw a scene of a character in a fantasy setting",
-                            width: 512, // Укажите нужную ширину
-                            height: 512, // Укажите нужную высоту
+                            width: 1024, // Укажите нужную ширину
+                            height: 1024, // Укажите нужную высоту
                             count: 1,
                         },
                         this.runtime

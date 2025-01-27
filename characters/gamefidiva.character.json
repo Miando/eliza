@@ -9,7 +9,7 @@
         "secrets": {
             "TWITTER_USERNAME": "GameFiDiva",
             "TWITTER_PASSWORD": "wJHWsgd18(",
-            "TWITTER_SEARCH_ENABLE": "TRUE",
+            "TWITTER_SEARCH_ENABLE": "FALSE",
             "TWITTER_EMAIL": "krisag_browerzd@outlook.com",
             "PROXY_URL": "http://piiqgrid:5PKnAo1aLm@46.101.64.183:14837"
         }

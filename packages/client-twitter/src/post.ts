@@ -422,7 +422,7 @@ async sendStandardTweet(
                 try {
                     if (Array.isArray(mediaData) && mediaData.length > 0) {
                         const preparedMedia = mediaData.map(item => ({
-                            data: Buffer.isBuffer(item.data) ? item.data : Buffer.from(item.data),
+                            mediaData: Buffer.isBuffer(item.data) ? item.data : Buffer.from(item.data),
                             mediaType: item.mediaType
                           }));
                         elizaLogger.info("Attempting media upload...");

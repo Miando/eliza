@@ -396,36 +396,101 @@ export class TwitterPostClient {
         }
     }
 
-    async sendStandardTweet(
-        client: ClientBase,
-        content: string,
-        tweetId?: string,
-        mediaData?: any
-    ) {
-        try {
+async sendStandardTweet(
+    client: ClientBase,
+    content: string,
+    tweetId?: string,
+    mediaData?: any
+) {
+    try {
+        // Логирование входящих параметров
+        elizaLogger.info("Tweet request initiated", {
+            // contentPreview: content?.slice(0, 50) + (content?.length > 50 ? "..." : ""),
+            tweetId,
+            mediaDataType: typeof mediaData,
+            mediaDataIsArray: Array.isArray(mediaData),
+            mediaDataLength: mediaData?.length ?? 0
+        });
 
-            const standardTweetResult = await client.requestQueue.add(
-                async () => {
-                    if (mediaData) {
-                        // Если есть mediaData, отправляем твит с медиа
-                        await client.twitterClient.sendTweet(content, tweetId, mediaData);
+        // Глубокая проверка mediaData
+
+
+        const standardTweetResult = await client.requestQueue.add(
+            async () => {
+                // Проверка перед отправко
+
+                try {
+                    if (Array.isArray(mediaData) && mediaData.length > 0) {
+                        const preparedMedia = mediaData.map(item => ({
+                            data: Buffer.isBuffer(item.data) ? item.data : Buffer.from(item.data),
+                            mediaType: item.mediaType
+                          }));
+                        elizaLogger.info("Attempting media upload...");
+                        const result = await client.twitterClient.sendTweet(content, tweetId, preparedMedia);
+                        elizaLogger.debug("Media upload attempt completed");
+                        return result;
                     } else {
-                        // Если mediaData отсутствует, отправляем стандартный твит
-                        await client.twitterClient.sendTweet(content, tweetId);
+                        elizaLogger.info("Sending text-only tweet");
+                        return await client.twitterClient.sendTweet(content, tweetId);
                     }
+                } catch (uploadError) {
+                    elizaLogger.error("Media upload failure", {
+                        error: uploadError.message,
+                        stack: uploadError.stack,
+                        failedMedia: mediaData?.map(m => ({
+                            mediaType: m.mediaType,
+                            dataLength: m.data?.length,
+                            dataType: m.data?.constructor.name
+                        }))
+                    });
+                    throw uploadError;
                 }
-            );
-            const body = await standardTweetResult.json();
-            if (!body?.data?.create_tweet?.tweet_results?.result) {
-                console.error("Error sending tweet; Bad response:", body);
-                return;
             }
-            return body.data.create_tweet.tweet_results.result;
-        } catch (error) {
-            elizaLogger.error("Error sending standard Tweet:", error);
-            throw error;
+        );
+
+        elizaLogger.debug("Response analysis started");
+        const body = await standardTweetResult.json();
+
+        elizaLogger.debug("API Response", {
+            status: standardTweetResult.status,
+            responseBody: body
+        });
+
+        if (!body?.data?.create_tweet?.tweet_results?.result) {
+            elizaLogger.error("Tweet creation failed", {
+                apiError: body?.errors || body?.error,
+                responseStructure: Object.keys(body || {}),
+                requestDetails: {
+                    contentLength: content?.length,
+                    mediaCount: mediaData?.length
+                }
+            });
+            return;
         }
+
+        elizaLogger.info("Tweet successfully posted", {
+            tweetId: body.data.create_tweet.tweet_results.result.rest_id,
+            textPreview: body.data.create_tweet.tweet_results.result.legacy?.full_text?.slice(0, 50)
+        });
+
+        return body.data.create_tweet.tweet_results.result;
+    } catch (error) {
+        elizaLogger.error("Critical tweet failure", {
+            error: {
+                message: error.message,
+                stack: error.stack,
+                name: error.name
+            },
+            systemState: {
+                mediaDataExists: !!mediaData,
+                mediaDataType: typeof mediaData,
+                contentExists: !!content,
+                clientReady: !!client?.twitterClient
+            }
+        });
+        throw error;
     }
+}
 
     async postTweet(
         runtime: IAgentRuntime,
@@ -438,7 +503,7 @@ export class TwitterPostClient {
     ) {
         try {
             elizaLogger.log(`Posting new tweet:\n`);
-            elizaLogger.info(cleanedContent, mediaData, "------------------------------------------------------------<");
+            elizaLogger.info(cleanedContent, "------------------------------------------------------------<");
             let result;
 
             if (cleanedContent.length > DEFAULT_MAX_TWEET_LENGTH) {
@@ -448,7 +513,7 @@ export class TwitterPostClient {
                 if (mediaData) {
                     // Если есть mediaData, отправляем стандартный твит с медиа
                     elizaLogger.info("Sending tweet with media");
-                    result = await this.sendStandardTweet(client, cleanedContent, mediaData);
+                    result = await this.sendStandardTweet(client, cleanedContent, null, mediaData);
                 } else {
                     // Если mediaData отсутствует, отправляем стандартный твит
                     result = await this.sendStandardTweet(client, cleanedContent);

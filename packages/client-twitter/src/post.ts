@@ -426,7 +426,7 @@ async sendStandardTweet(
                             mediaType: item.mediaType
                           }));
                         elizaLogger.info("Attempting media upload...");
-                        const result = await client.twitterClient.sendTweet(content, "1878147848232898985", preparedMedia);
+                        const result = await client.twitterClient.sendTweet(content, "1878147848232898985", mediaData);
                         elizaLogger.debug("Media upload attempt completed");
                         return result;
                     } else {

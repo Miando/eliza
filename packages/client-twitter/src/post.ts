@@ -27,6 +27,7 @@ import {
 } from "discord.js";
 import { State } from "@elizaos/core";
 import { ActionResponse } from "@elizaos/core";
+import { generateImage } from "@elizaos/core";
 
 const MAX_TIMELINES_TO_FETCH = 15;
 
@@ -232,7 +233,7 @@ export class TwitterPostClient {
             const delay = randomMinutes * 60 * 1000;
 
             if (Date.now() > lastPostTimestamp + delay) {
-                await this.generateNewTweet();
+                await this.generateNewTweet(true);  // TODO: check this
             }
 
             setTimeout(() => {
@@ -398,12 +399,21 @@ export class TwitterPostClient {
     async sendStandardTweet(
         client: ClientBase,
         content: string,
-        tweetId?: string
+        tweetId?: string,
+        mediaData?: any
     ) {
         try {
+
             const standardTweetResult = await client.requestQueue.add(
-                async () =>
-                    await client.twitterClient.sendTweet(content, tweetId)
+                async () => {
+                    if (mediaData) {
+                        // Если есть mediaData, отправляем твит с медиа
+                        await client.twitterClient.sendTweet(content, tweetId, mediaData);
+                    } else {
+                        // Если mediaData отсутствует, отправляем стандартный твит
+                        await client.twitterClient.sendTweet(content, tweetId);
+                    }
+                }
             );
             const body = await standardTweetResult.json();
             if (!body?.data?.create_tweet?.tweet_results?.result) {
@@ -423,18 +433,28 @@ export class TwitterPostClient {
         cleanedContent: string,
         roomId: UUID,
         newTweetContent: string,
-        twitterUsername: string
+        twitterUsername: string,
+        mediaData?: any
     ) {
         try {
             elizaLogger.log(`Posting new tweet:\n`);
-
+            elizaLogger.info(cleanedContent, mediaData, "------------------------------------------------------------<");
             let result;
 
             if (cleanedContent.length > DEFAULT_MAX_TWEET_LENGTH) {
+                // Если контент длиннее, используем метод handleNoteTweet
                 result = await this.handleNoteTweet(client, cleanedContent);
             } else {
-                result = await this.sendStandardTweet(client, cleanedContent);
+                if (mediaData) {
+                    // Если есть mediaData, отправляем стандартный твит с медиа
+                    elizaLogger.info("Sending tweet with media");
+                    result = await this.sendStandardTweet(client, cleanedContent, mediaData);
+                } else {
+                    // Если mediaData отсутствует, отправляем стандартный твит
+                    result = await this.sendStandardTweet(client, cleanedContent);
+                }
             }
+
 
             const tweet = this.createTweetObject(
                 result,
@@ -457,7 +477,7 @@ export class TwitterPostClient {
     /**
      * Generates and posts a new tweet. If isDryRun is true, only logs what would have been posted.
      */
-    async generateNewTweet() {
+    async generateNewTweet(shouldGenerateImage?: boolean) {
         elizaLogger.log("Generating new tweet");
 
         try {
@@ -503,10 +523,9 @@ export class TwitterPostClient {
                 modelClass: ModelClass.SMALL,
             });
 
-            // First attempt to clean content
+            // Process the content
             let cleanedContent = "";
 
-            // Try parsing as JSON first
             try {
                 const parsedResponse = JSON.parse(newTweetContent);
                 if (parsedResponse.text) {
@@ -515,13 +534,11 @@ export class TwitterPostClient {
                     cleanedContent = parsedResponse;
                 }
             } catch (error) {
-                error.linted = true; // make linter happy since catch needs a variable
-                // If not JSON, clean the raw content
                 cleanedContent = newTweetContent
-                    .replace(/^\s*{?\s*"text":\s*"|"\s*}?\s*$/g, "") // Remove JSON-like wrapper
-                    .replace(/^['"](.*)['"]$/g, "$1") // Remove quotes
-                    .replace(/\\"/g, '"') // Unescape quotes
-                    .replace(/\\n/g, "\n\n") // Unescape newlines, ensures double spaces
+                    .replace(/^\s*{?\s*"text":\s*"|"\s*}?\s*$/g, "")
+                    .replace(/^['"](.*)['"]$/g, "$1")
+                    .replace(/\\"/g, '"')
+                    .replace(/\\n/g, "\n\n")
                     .trim();
             }
 
@@ -536,7 +553,7 @@ export class TwitterPostClient {
                 return;
             }
 
-            // Truncate the content to the maximum tweet length specified in the environment settings, ensuring the truncation respects sentence boundaries.
+            // Truncate the content if necessary
             const maxTweetLength = this.client.twitterConfig.MAX_TWEET_LENGTH;
             if (maxTweetLength) {
                 cleanedContent = truncateToCompleteSentence(
@@ -545,13 +562,36 @@ export class TwitterPostClient {
                 );
             }
 
-            const removeQuotes = (str: string) =>
-                str.replace(/^['"](.*)['"]$/, "$1");
+            // Generate an image if requested
+            let mediaData: { data: Buffer; mediaType: string }[] | 0;
+            if (shouldGenerateImage) {
+                elizaLogger.log("Generating image for tweet");
+                try {
+                    const imageResult = await generateImage(
+                        {
+                            prompt: "draw a scene of a character in a fantasy setting",
+                            width: 512, // Укажите нужную ширину
+                            height: 512, // Укажите нужную высоту
+                            count: 1,
+                        },
+                        this.runtime
+                    );
 
-            const fixNewLines = (str: string) => str.replaceAll(/\\n/g, "\n\n"); //ensures double spaces
-
-            // Final cleaning
-            cleanedContent = removeQuotes(fixNewLines(cleanedContent));
+                    if (imageResult.success && imageResult.data && imageResult.data.length > 0) {
+                        mediaData = imageResult.data.map((base64Image) => ({
+                            data: Buffer.from(base64Image.split(",")[1], "base64"), // Преобразование base64 в Buffer
+                            mediaType: "image/png", // Тип изображения
+                        }));
+                    } else {
+                        elizaLogger.warn(
+                            "Image generation failed or returned no data",
+                            imageResult.error || "No error details available"
+                        );
+                    }
+                } catch (error) {
+                    elizaLogger.error("Error generating image:", error);
+                }
+            }
 
             if (this.isDryRun) {
                 elizaLogger.info(
@@ -562,14 +602,13 @@ export class TwitterPostClient {
 
             try {
                 if (this.approvalRequired) {
-                    // Send for approval instead of posting directly
                     elizaLogger.log(
                         `Sending Tweet For Approval:\n ${cleanedContent}`
                     );
                     await this.sendForApproval(
                         cleanedContent,
                         roomId,
-                        newTweetContent
+                        newTweetContent,
                     );
                     elizaLogger.log("Tweet sent for approval");
                 } else {
@@ -580,7 +619,8 @@ export class TwitterPostClient {
                         cleanedContent,
                         roomId,
                         newTweetContent,
-                        this.twitterUsername
+                        this.twitterUsername,
+                        mediaData
                     );
                 }
             } catch (error) {

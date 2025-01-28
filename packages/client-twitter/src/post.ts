@@ -233,7 +233,7 @@ export class TwitterPostClient {
             const delay = randomMinutes * 60 * 1000;
 
             if (Date.now() > lastPostTimestamp + delay) {
-                await this.generateNewTweet(true);  // TODO: check this
+                await this.generateNewTweet();  // TODO: check this
             }
 
             setTimeout(() => {

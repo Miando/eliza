@@ -862,7 +862,7 @@ export type Character = {
         post: string[];
     };
     /** Writing style guides */
-    randomImagePrompts: {
+    randomImagePrompts?: {
         locations: string[];
         activities: string[];
         objects: string[];

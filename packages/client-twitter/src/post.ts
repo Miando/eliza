@@ -233,7 +233,7 @@ export class TwitterPostClient {
             const delay = randomMinutes * 60 * 1000;
 
             if (Date.now() > lastPostTimestamp + delay) {
-                await this.generateNewTweet();  // TODO: check this
+                await this.generateNewTweet(true);  // TODO: check this
             }
 
             setTimeout(() => {
@@ -632,10 +632,12 @@ async sendStandardTweet(
             let mediaData: { data: Buffer; mediaType: string }[] | 0;
             if (shouldGenerateImage) {
                 elizaLogger.log("Generating image for tweet");
+                // const promptImageTemplate = this.runtime.character.templates?.twitterPostImageTemplate || twitterPostImageTemplate
+                // const promptImage = generateImagePrompt(promptImageTemplate);
                 try {
                     const imageResult = await generateImage(
                         {
-                            prompt: "draw a scene of a character in a fantasy setting",
+                            prompt: "GameFiDiva play with NFTs",
                             width: 1024, // Укажите нужную ширину
                             height: 1024, // Укажите нужную высоту
                             count: 1,

@@ -2,6 +2,7 @@
     "name": "GameFiDiva",
     "clients": ["twitter"],
     "modelProvider": "openai",
+    "imageModelProvider": "falai",
     "settings": {
         "voice": {
             "model": "en_US-female-bold"
@@ -11,6 +12,8 @@
             "TWITTER_PASSWORD": "wJHWsgd18(",
             "TWITTER_SEARCH_ENABLE": "FALSE",
             "TWITTER_EMAIL": "krisag_browerzd@outlook.com",
+            "FAL_API_KEY": "f26b1592-913e-405b-aea2-6fb349a060be:05602b25f29235d7a59c961b8f8906fd",
+            "FAL_AI_LORA_PATH": "https://v3.fal.media/files/penguin/_6f2Ybx5T-8MvjgpR_b1A_pytorch_lora_weights.safetensors",
             "PROXY_URL": "http://piiqgrid:5PKnAo1aLm@46.101.64.183:14837"
         }
     },

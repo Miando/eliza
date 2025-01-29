@@ -90,6 +90,10 @@ interface PendingTweet {
 
 type PendingTweetApprovalStatus = "PENDING" | "APPROVED" | "REJECTED";
 
+export const twitterPostImageTemplate = `
+Blank image template`;
+
+
 export class TwitterPostClient {
     client: ClientBase;
     runtime: IAgentRuntime;
@@ -427,7 +431,7 @@ async sendStandardTweet(
                           }));
 
                         elizaLogger.info("Attempting media upload...");
-                        const result = await client.twitterClient.sendTweet('bla-bla', "1878147848232898985", mediaData);
+                        const result = await client.twitterClient.sendTweet('', tweetId || undefined, preparedMedia);
                         elizaLogger.info("Media upload attempt completed");
                         return result;
                     } else {
@@ -540,6 +544,28 @@ async sendStandardTweet(
         }
     }
 
+async generateImagePrompt(template: TemplateType): Promise<string> {
+    const { name, randomImagePrompts } = this.runtime.character;
+
+        // Проверка наличия необходимых данных
+        if (!randomImagePrompts || !randomImagePrompts.locations || !randomImagePrompts.activities || !randomImagePrompts.objects) {
+            throw new Error('Random prompts configuration is incomplete');
+        }
+
+        // 3. Функция для безопасного получения случайного элемента
+        const getRandom = (arr: string[]): string => {
+            if (!arr || arr.length === 0) return '';
+            return arr[Math.floor(Math.random() * arr.length)];
+        };
+
+        // 4. Последовательная замена плейсхолдеров
+        return String(template)
+            .replace(/\{\{character\}\}/gi, name)
+            .replace(/\{\{location\}\}/gi, getRandom(randomImagePrompts.locations))
+            .replace(/\{\{activity\}\}/gi, getRandom(randomImagePrompts.activities))
+            .replace(/\{\{object\}\}/gi, getRandom(randomImagePrompts.objects));
+    }
+
     /**
      * Generates and posts a new tweet. If isDryRun is true, only logs what would have been posted.
      */
@@ -632,12 +658,13 @@ async sendStandardTweet(
             let mediaData: { data: Buffer; mediaType: string }[] | 0;
             if (shouldGenerateImage) {
                 elizaLogger.log("Generating image for tweet");
-                // const promptImageTemplate = this.runtime.character.templates?.twitterPostImageTemplate || twitterPostImageTemplate
-                // const promptImage = generateImagePrompt(promptImageTemplate);
+                const promptImageTemplate = this.runtime.character.templates?.twitterPostImageTemplate || twitterPostImageTemplate
+                const promptImage = await this.generateImagePrompt(promptImageTemplate);
+                elizaLogger.info("Generated image prompt:\n" + promptImage);
                 try {
                     const imageResult = await generateImage(
                         {
-                            prompt: "GameFiDiva play with stars in the garden",
+                            prompt: promptImage,
                             width: 1024, // Укажите нужную ширину
                             height: 1024, // Укажите нужную высоту
                             count: 1,

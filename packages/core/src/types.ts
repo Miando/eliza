@@ -730,6 +730,7 @@ export type Character = {
         twitterSearchTemplate?: TemplateType;
         twitterActionTemplate?: TemplateType;
         twitterPostTemplate?: TemplateType;
+        twitterPostImageTemplate?: TemplateType;
         twitterMessageHandlerTemplate?: TemplateType;
         twitterShouldRespondTemplate?: TemplateType;
         farcasterPostTemplate?: TemplateType;
@@ -859,6 +860,12 @@ export type Character = {
         all: string[];
         chat: string[];
         post: string[];
+    };
+    /** Writing style guides */
+    randomImagePrompts: {
+        locations: string[];
+        activities: string[];
+        objects: string[];
     };
 
     /** Optional Twitter profile */

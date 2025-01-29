@@ -74,13 +74,13 @@ export const myProvider: Provider = {
                         elizaLogger.error(`Parsing failed for ${article.news_url}:`, parseErr);
                     }
 
+                    // Insert into processed_news table
+                    insertStmt.run(article.news_url, new Date().toISOString(), parseStatus, runtime.agentId);
 
                     if (parseStatus === "failed") {
                         elizaLogger.log(`Article parse failed, marked as processed: ${article.news_url}`);
                         continue; // Skip to next article
                     }
-                    // Insert into processed_news table
-                    insertStmt.run(article.news_url, new Date().toISOString(), parseStatus, runtime.agentId);
 
                     // Build the article context content
                     const ticker = article.tickers && article.tickers.length > 0 ? article.tickers[0] : "Unknown";

@@ -228,19 +228,17 @@ export class TwitterPostClient {
                 timestamp: number;
             }>("twitter/" + this.twitterUsername + "/lastPost");
 
-            // const lastPostTimestamp = lastPost?.timestamp ?? 0;
-            const lastPostTimestamp = 0;
+            const lastPostTimestamp = lastPost?.timestamp ?? 0;
+            // const lastPostTimestamp = 0;
             const minMinutes = this.client.twitterConfig.POST_INTERVAL_MIN;
             const maxMinutes = this.client.twitterConfig.POST_INTERVAL_MAX;
             const randomMinutes =
                 Math.floor(Math.random() * (maxMinutes - minMinutes + 1)) +
                 minMinutes;
             const delay = randomMinutes * 60 * 1000;
-            elizaLogger.info("Delay: " + delay);
             if (Date.now() > lastPostTimestamp + delay) {
-                elizaLogger.info("Generating new tweet-----------");
-
-                await this.generateNewTweet(true);  // TODO: check this
+                const shouldGenerateImage = Math.random() < 0.1;
+                await this.generateNewTweet(shouldGenerateImage);  // TODO: check this
             }
 
             setTimeout(() => {

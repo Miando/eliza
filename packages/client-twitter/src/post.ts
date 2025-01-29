@@ -235,8 +235,10 @@ export class TwitterPostClient {
                 Math.floor(Math.random() * (maxMinutes - minMinutes + 1)) +
                 minMinutes;
             const delay = randomMinutes * 60 * 1000;
-
+            elizaLogger.info("Delay: " + delay);
             if (Date.now() > lastPostTimestamp + delay) {
+                elizaLogger.info("Generating new tweet-----------");
+
                 await this.generateNewTweet(true);  // TODO: check this
             }
 

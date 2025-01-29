@@ -637,7 +637,7 @@ async sendStandardTweet(
                 try {
                     const imageResult = await generateImage(
                         {
-                            prompt: "GameFiDiva play with NFTs",
+                            prompt: "GameFiDiva play with stars in the garden",
                             width: 1024, // Укажите нужную ширину
                             height: 1024, // Укажите нужную высоту
                             count: 1,

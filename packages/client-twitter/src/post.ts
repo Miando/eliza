@@ -91,7 +91,7 @@ interface PendingTweet {
 type PendingTweetApprovalStatus = "PENDING" | "APPROVED" | "REJECTED";
 
 export const twitterPostImageTemplate = `
-Blank image template`;
+{{character}} stands {{location}}, {{activity}} {{object}}`;
 
 
 export class TwitterPostClient {

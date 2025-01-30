@@ -237,7 +237,7 @@ export class TwitterPostClient {
                 minMinutes;
             const delay = randomMinutes * 60 * 1000;
             if (Date.now() > lastPostTimestamp + delay) {
-                const shouldGenerateImage = Math.random() < 0.1;
+                const shouldGenerateImage = Math.random() < 0.2;
                 await this.generateNewTweet(shouldGenerateImage);  // TODO: check this
             }
 

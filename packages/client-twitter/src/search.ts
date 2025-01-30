@@ -113,33 +113,35 @@ export class TwitterSearchClient {
             }
 
             const prompt = `
-  Here are some tweets related to the search term "${searchTerm}":
+              Here are some tweets related to the search term "${searchTerm}":
 
-  ${[...slicedTweets, ...homeTimeline]
-      .filter((tweet) => {
-          // ignore tweets where any of the thread tweets contain a tweet by the bot
-          const thread = tweet.thread;
-          const botTweet = thread.find(
-              (t) => t.username === this.twitterUsername
-          );
-          return !botTweet;
-      })
-      .map(
-          (tweet) => `
-    ID: ${tweet.id}${tweet.inReplyToStatusId ? ` In reply to: ${tweet.inReplyToStatusId}` : ""}
-    From: ${tweet.name} (@${tweet.username})
-    Text: ${tweet.text}
-  `
-      )
-      .join("\n")}
+              ${[...slicedTweets, ...homeTimeline]
+                  .filter((tweet) => {
+                      // ignore tweets where any of the thread tweets contain a tweet by the bot
+                      const thread = tweet.thread;
+                      const botTweet = thread.find(
+                          (t) => t.username === this.twitterUsername
+                      );
+                      return !botTweet;
+                  })
+                  .map(
+                      (tweet) => `
+                ID: ${tweet.id}${tweet.inReplyToStatusId ? ` In reply to: ${tweet.inReplyToStatusId}` : ""}
+                From: ${tweet.name} (@${tweet.username})
+                Text: ${tweet.text}
+              `
+                  )
+                  .join("\n")}
 
-  Which tweet is the most interesting and relevant for Ruby to reply to? Please provide only the ID of the tweet in your response.
-  Notes:
-    - Respond to English tweets only
-    - Respond to tweets that don't have a lot of hashtags, links, URLs or images
-    - Respond to tweets that are not retweets
-    - Respond to tweets where there is an easy exchange of ideas to have with the user
-    - ONLY respond with the ID of the tweet`;
+              Which tweet is the most interesting and relevant for ${this.runtime.character.name} to reply to? Please provide only the ID of the tweet in your response.
+              Notes:
+                - Respond to English tweets only
+                - Respond to tweets that don't have a lot of hashtags, links, URLs or images
+                - Respond to tweets that are not retweets
+                - Respond only to other people's tweets, not your own
+                - Respond to tweets where there is an easy exchange of ideas to have with the user
+                - ONLY respond to a tweet if you haven't replied to it before
+                - ONLY respond with the ID of the tweet`;
 
             const mostInterestingTweetResponse = await generateText({
                 runtime: this.runtime,

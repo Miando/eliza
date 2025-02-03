@@ -91,7 +91,7 @@ interface PendingTweet {
 type PendingTweetApprovalStatus = "PENDING" | "APPROVED" | "REJECTED";
 
 export const twitterPostImageTemplate = `
-{{character}} stands {{location}}, {{activity}} {{object}}`;
+{{character}}, {{angle}}, {{location}}, {{activity}} {{object}}.`;
 
 
 export class TwitterPostClient {
@@ -559,9 +559,29 @@ async generateImagePrompt(template: TemplateType): Promise<string> {
             return arr[Math.floor(Math.random() * arr.length)];
         };
 
+        const angles = [
+          "front view facing camera",         // Прямой фронтальный ракурс
+          "heroic low-angle shot",            // Вид снизу для величия
+          "dramatic high-angle perspective",  // Вид сверху для драмы
+          "dynamic 3/4 side view",            // Классический 3/4
+          "over-the-shoulder perspective",    // Вид из-за плеча
+          "extreme close-up",                 // Крупный план
+          "wide panoramic shot",              // Панорамный вид
+          "Dutch tilt angle",                 // Наклонённая камера
+          "bird's-eye view",                  // Вид с высоты
+          "worm's-eye view",                  // Вид снизу с земли
+          "reflection in water surface",      // Отражение в воде
+          "silhouette against backlight",     // Силуэт на фоне света
+          "diagonal action angle",            // Диагональная композиция
+          "profile view with rim lighting",   // Контровой свет
+          "through foreground objects"        // Камера сквозь объекты
+        ];
+
+
         // 4. Последовательная замена плейсхолдеров
         return String(template)
             .replace(/\{\{character\}\}/gi, name)
+            .replace(/\{\{angle\}\}/gi, getRandom(angles))
             .replace(/\{\{location\}\}/gi, getRandom(randomImagePrompts.locations))
             .replace(/\{\{activity\}\}/gi, getRandom(randomImagePrompts.activities))
             .replace(/\{\{object\}\}/gi, getRandom(randomImagePrompts.objects));

@@ -13,6 +13,10 @@ services:
             - ./:/app
         env_file:
             - ./.env
+        environment:
+            - HTTP_PROXY=http://piiqgrid:5PKnAo1aLm@46.101.64.183:11233
+            - HTTPS_PROXY=http://piiqgrid:5PKnAo1aLm@46.101.64.183:11233
+            - NO_PROXY=localhost,127.0.0.1
         ports:
             - "3000:3000"
         restart: always

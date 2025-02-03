@@ -1,0 +1,36 @@
+services:
+    tee_amari:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        stdin_open: true
+        tty: true
+        image: myapp:latest
+        volumes:
+            - /var/run/tappd.sock:/var/run/tappd.sock
+            - tee:/app/packages/client-twitter/src/tweetcache
+            - tee:/app/db.sqlite
+        env_file:
+            - .env
+        ports:
+            - "3000:3000"
+        restart: always
+        command: ["pnpm", "start", "--character=characters/amari.character.json"]
+    tee_trump:
+        image: myapp:latest
+        stdin_open: true
+        tty: true
+        volumes:
+            - /var/run/tappd.sock:/var/run/tappd.sock
+            - tee:/app/packages/client-twitter/src/tweetcache
+            - tee:/app/db.sqlite
+        env_file:
+            - .env
+        ports:
+            - "3001:3000"
+        restart: always
+        command: ["pnpm", "start", "--character=characters/trump.character.json"]
+
+volumes:
+    tee:
+

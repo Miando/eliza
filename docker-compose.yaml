@@ -21,6 +21,50 @@ services:
             - "3000:3000"
         restart: always
         command: ["pnpm", "start", "--character=characters/gamefidiva.character.json"]
+    tee_pogue:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        stdin_open: true
+        tty: true
+        image: myapp:latest
+        volumes:
+            - /var/run/tappd.sock:/var/run/tappd.sock
+            - tee:/app/packages/client-twitter/src/tweetcache
+            - tee:/app/db.sqlite
+            - ./:/app
+        env_file:
+            - ./.env
+        environment:
+            - HTTP_PROXY=http://piiqgrid:5PKnAo1aLm@46.101.64.183:11233
+            - HTTPS_PROXY=http://piiqgrid:5PKnAo1aLm@46.101.64.183:11233
+            - NO_PROXY=localhost,127.0.0.1
+        ports:
+            - "3001:3000"
+        restart: always
+        command: ["pnpm", "start", "--character=characters/gamefipogue.character.json"]
+    tee_duck:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        stdin_open: true
+        tty: true
+        image: myapp:latest
+        volumes:
+            - /var/run/tappd.sock:/var/run/tappd.sock
+            - tee:/app/packages/client-twitter/src/tweetcache
+            - tee:/app/db.sqlite
+            - ./:/app
+        env_file:
+            - ./.env
+        environment:
+            - HTTP_PROXY=http://piiqgrid:5PKnAo1aLm@46.101.64.183:11233
+            - HTTPS_PROXY=http://piiqgrid:5PKnAo1aLm@46.101.64.183:11233
+            - NO_PROXY=localhost,127.0.0.1
+        ports:
+            - "3002:3000"
+        restart: always
+        command: ["pnpm", "start", "--character=characters/mcdefiduck.character.json"]
 
 volumes:
     tee:

@@ -6,7 +6,7 @@ import {resolve} from "path";
 
 const MANUAL_NEWS_PATH = resolve("manual_news.txt");
 const API_ENDPOINT = 'https://cryptonews-api.com/api/v1';
-const TICKERS = ['BEAM', 'FLOKI', 'SAND', 'GALA', 'IMX', 'AXS', 'MANA', 'ENJ', 'ILV', 'ALICE', 'YGG', 'UOS', 'WAXP', 'SLP', 'CHR', 'TLM', 'CRA', 'RACA', 'MBOX', 'BLOK', 'DG', 'REVV', 'ATLAS', 'POLIS', 'GMT', 'GST', 'WEMIX', 'SUPER', 'PRIME', 'MYTH', 'BIGTIME', 'PIXEL', 'MAGIC', 'SFUND', 'PYR', 'BNX'];
+const TICKERS = ["AXS", "GALA", "SAND", "ENJ", "ILV", "SLP", "UOS", "ALICE", "PYR", "IMX", "WAXP", "ATLAS", "YGG", "GODS", "MBOX", "TLM", "RMRK", "RACA", "STARL", "GAFI", "CGG", "SPS", "DERC", "ATRI", "REVO", "PKR", "SKILL", "GHST", "SIPHER", "CWAR", "SIDUS", "BLOK", "HIGH", "RAINI", "WILD", "MONI", "MIST", "FINA", "ZOON", "BMON", "DPET", "KWT", "SPG", "WARS", "DRACE", "PVU", "CYT", "CCAR", "CPAN", "CGAR", "HER"];
 const TIMEFRAME_HOURS = 24;
 
 function checkIfAllWordsExist(text: string, topics: string[]): boolean {
